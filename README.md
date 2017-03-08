@@ -1,0 +1,1 @@
+# eventuate-aws-gateway-serverless-plugin
