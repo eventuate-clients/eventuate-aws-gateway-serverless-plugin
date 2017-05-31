@@ -1,19 +1,19 @@
 Eventuate AWS Gateway Serverless plugin
 =======================================
 
-This is the Serverless plugin for Eventuate AWS Gateway.
+This is the [Serverless](https://serverless.com/) plugin for [Eventuate](http://eventuate.io/) AWS Gateway.
 
 System requirements:
  - Node.js v4 or later
- 
+
 ## Usage
 
 Put `eventuate-aws-gateway-serverless-plugin` into `plugins` section in the `serverless.yml`
 
     plugins:
       - eventuate-aws-gateway-serverless-plugin
-      
-      
+
+
 Add Eventuate AWS Gateway configuration for a lambda function. For example:
 
     functions:
@@ -26,18 +26,18 @@ Add Eventuate AWS Gateway configuration for a lambda function. For example:
               entitiesAndEventTypes:
                 net.chrisrichardson.eventstore.TestEntity:
                   - net.chrisrichardson.eventstore.TestEntityCreated
- 
+
 ## Required environment variables
 
     EVENTUATE_API_KEY_ID
     EVENTUATE_API_KEY_SECRET
-    
+
 ## Optional environment variables
 
     EVENTUATE_GATEWAY_URL
     EVENTUATE_GATEWAY_JWT_TOKEN
     EVENTUATE_GATEWAY_DEBUG
-    
+
 ## Commands
 
 
@@ -56,11 +56,10 @@ Disable Eventuate AWS Gateway
 Delete Eventuate AWS Gateway
 
     sls eventuate-gateway delete  --gatewayId <gateway ID> --space [space name]
-    
+
 The parameter `space` is set by default to "default", so can be omitted.
-    
+
 See command usage
 
     sls eventuate-gateway --help
     sls eventuate-gateway <command> --help
-    
