@@ -1,0 +1,26 @@
+{
+  "name": "eventuate-aws-gateway-serverless-plugin",
+  "repository": "https://github.com/eventuate-clients/eventuate-aws-gateway-serverless-plugin",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=4.0"
+  },
+  "description": "Serverless plugin for the Eventuate AWS Gateway",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node_modules/.bin/mocha --timeout 0 test/*-spec.js"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "jsonfile": "^2.4.0",
+    "lodash": "^4.17.4",
+    "request": "^2.80.0",
+    "request-promise-native": "^1.0.3"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "serverless": "^1.9.0"
+  }
+}

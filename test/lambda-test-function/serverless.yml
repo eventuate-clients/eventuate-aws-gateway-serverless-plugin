@@ -1,0 +1,19 @@
+service: lambda-test-function
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+  stage: dev
+
+functions:
+  testEventHandler:
+    handler: handler.eventHandler
+    events:
+      - eventuate:
+          subscriberId: eventuateGatewayPlugin
+          space: plugin
+          entitiesAndEventTypes:
+            net.chrisrichardson.eventstore.TestEntity:
+              - net.chrisrichardson.eventstore.TestEntityCreated
+plugins:
+  - eventuate-aws-gateway-serverless-plugin
