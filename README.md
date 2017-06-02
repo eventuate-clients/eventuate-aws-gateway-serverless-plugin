@@ -6,6 +6,10 @@ This is the [Serverless](https://serverless.com/) plugin for [Eventuate](http://
 System requirements:
  - Node.js v4 or later
 
+## Projects that use this plugin
+
+* [Example Java AWS Lambda function for Eventuate](https://github.com/eventuate-examples/eventuate-examples-java-aws-gateway-echo)
+
 ## Usage
 
 Put `eventuate-aws-gateway-serverless-plugin` into `plugins` section in the `serverless.yml`
