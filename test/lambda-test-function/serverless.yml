@@ -15,5 +15,16 @@ functions:
           entitiesAndEventTypes:
             net.chrisrichardson.eventstore.TestEntity:
               - net.chrisrichardson.eventstore.TestEntityCreated
+
+  testEventHandlerDlq:
+    handler: handler.eventHandlerDlq
+    events:
+      - eventuate:
+          subscriberId: eventuateGatewayPlugin
+          dlq: ${env:EVENTUATE_PLUGIN_TEST_DQL_URL}
+          space: plugin
+          entitiesAndEventTypes:
+            net.chrisrichardson.eventstore.TestEntity:
+              - net.chrisrichardson.eventstore.TestEntityCreated
 plugins:
   - eventuate-aws-gateway-serverless-plugin

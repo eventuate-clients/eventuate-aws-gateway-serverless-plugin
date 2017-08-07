@@ -227,7 +227,7 @@ class EventuateAWSGatewayPlugin {
       throw new Error(`AWS Credentials not found for the function "${functionName}"`);
     }
 
-    return {
+    const options = {
       gatewayType: "AWS",
       connectionString: this.getFunctionArn(functionName),
       credentials:{
@@ -235,6 +235,15 @@ class EventuateAWSGatewayPlugin {
         secretKey: credentials.secretAccessKey
       }
     };
+
+    if (eventuateConfig.dlq) {
+      options.dlq = {
+        url: eventuateConfig.dlq
+      }
+    }
+
+
+    return options;
   }
 
   getFunctionArn(functionName) {
