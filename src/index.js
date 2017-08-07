@@ -227,7 +227,7 @@ class EventuateAWSGatewayPlugin {
       throw new Error(`AWS Credentials not found for the function "${functionName}"`);
     }
 
-    return {
+    const options = {
       gatewayType: "AWS",
       connectionString: this.getFunctionArn(functionName),
       credentials:{
@@ -235,6 +235,17 @@ class EventuateAWSGatewayPlugin {
         secretKey: credentials.secretAccessKey
       }
     };
+
+    if (eventuateConfig.dlq) {
+      options.dlq = {
+        url: eventuateConfig.dlq
+      }
+
+      delete eventuateConfig.dlq;
+    }
+
+
+    return options;
   }
 
   getFunctionArn(functionName) {
@@ -384,7 +395,7 @@ class EventuateAWSGatewayPlugin {
       options.body = requestData
     }
 
-    this.logger.log('options:', util.inspect(options, false, 10));
+    this.logger.log('Request options:', util.inspect(options, false, 10));
     return request(options)
   }
 
@@ -463,6 +474,12 @@ function gatewayConfigChanged(eventuateConfig, currentConfig) {
       connectionString: eventuateConfig.gatewayDestination.connectionString
     }
   };
+
+  if (eventuateConfig.gatewayDestination.dlq) {
+    newConfig.gatewayDestination.dlq = {
+      url: eventuateConfig.gatewayDestination.dlq.url
+    }
+  }
 
   return !(_.isEqual(newConfig, currentConfig));
 }
