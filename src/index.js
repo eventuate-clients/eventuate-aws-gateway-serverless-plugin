@@ -148,7 +148,6 @@ class EventuateAWSGatewayPlugin {
   }
 
   onAfterDeploy() {
-
     this.initFunctionsArn()
       .then(functionsArn => {
 
@@ -214,7 +213,7 @@ class EventuateAWSGatewayPlugin {
 
     let credentials = {};
 
-    if (typeof (eventuateConfig.awsCredentials) == 'object') {
+    if (typeof (eventuateConfig.awsCredentials) === 'object') {
       credentials = {
         accessKeyId: eventuateConfig.awsCredentials.accessKeyId,
         secretAccessKey: eventuateConfig.awsCredentials.secretAccessKey,
@@ -239,9 +238,7 @@ class EventuateAWSGatewayPlugin {
     if (eventuateConfig.dlq) {
       options.dlq = {
         url: eventuateConfig.dlq
-      }
-
-      delete eventuateConfig.dlq;
+      };
     }
 
 
@@ -466,6 +463,7 @@ function convertArrayToObject(arrayOfObjects) {
 }
 
 function gatewayConfigChanged(eventuateConfig, currentConfig) {
+
   const newConfig = {
     subscriberId: eventuateConfig.subscriberId,
     entitiesAndEventTypes: eventuateConfig.entitiesAndEventTypes,
@@ -481,7 +479,46 @@ function gatewayConfigChanged(eventuateConfig, currentConfig) {
     }
   }
 
-  return !(_.isEqual(newConfig, currentConfig));
+  if (newConfig.subscriberId !== currentConfig.subscriberId) {
+    return true;
+  }
+
+  const { gatewayDestination: newGatewayDestination } = newConfig;
+  const { gatewayDestination: currentGatewayDestination } = currentConfig;
+
+  if (newGatewayDestination.connectionString !== currentGatewayDestination.connectionString) {
+    return true;
+  }
+
+  if (JSON.stringify(newGatewayDestination.dlq) !== JSON.stringify(currentGatewayDestination.dlq)) {
+    return true;
+  }
+
+  const newConfigEntities = Object.keys(newConfig.entitiesAndEventTypes);
+  const currentConfigEntities = Object.keys(currentConfig.entitiesAndEventTypes);
+
+  if (newConfigEntities.length !== currentConfigEntities.length) {
+    return true;
+  }
+
+  //Compare entities
+  for(let entity of newConfigEntities) {
+
+    if(!(currentConfigEntities.indexOf(entity) >= 0)) {
+      return true;
+    }
+
+    //compare entity events
+    let newConfigEvents = newConfig.entitiesAndEventTypes[entity];
+    let currentConfigEvents = currentConfig.entitiesAndEventTypes[entity];
+
+    const diff1 = _.difference(newConfigEvents, currentConfigEvents);
+    const diff2 = _.difference(currentConfigEvents, newConfigEvents);
+
+    if (diff1.length > 0 || diff2.length > 0) {
+      return true;
+    }
+  }
 }
 
 function ensureAwsCredentials(credentials) {
