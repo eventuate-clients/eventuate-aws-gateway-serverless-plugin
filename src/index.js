@@ -38,6 +38,10 @@ class EventuateAWSGatewayPlugin {
       }
     };
 
+    const infoOptions = _.clone(commonOptions);
+    infoOptions.gatewayId.required = false;
+    infoOptions.space.required = false;
+
     this.commands = {
       'eventuate-gateway': {
         lifecycleEvents: [
@@ -45,14 +49,14 @@ class EventuateAWSGatewayPlugin {
           'functions'
         ],
         commands: {
-          'enable': {
+          enable: {
             usage: 'Enable Eventuate AWS Gateway',
             lifecycleEvents: [
               'enable'
             ],
             options: commonOptions,
           },
-          'disable': {
+          disable: {
             usage: 'Disable Eventuate AWS Gateway',
             lifecycleEvents: [
               'disable'
@@ -64,7 +68,7 @@ class EventuateAWSGatewayPlugin {
             lifecycleEvents: [
               'info'
             ],
-            options: commonOptions,
+            options: infoOptions,
           },
           delete: {
             usage: 'Delete Eventuate AWS Gateway',
@@ -94,6 +98,11 @@ class EventuateAWSGatewayPlugin {
 
     const args = this.getCommandArguments();
 
+    if (!args.gatewayId) {
+      this.showLambdasGatewayInfo();
+      return;
+    }
+
     return this.getEventuateGatewayById(args.gatewayId, args.space)
       .then(result => {
         if (result) {
@@ -103,6 +112,29 @@ class EventuateAWSGatewayPlugin {
         return result;
       })
       .catch(this.errorHandler.bind(this));
+  }
+
+  showLambdasGatewayInfo() {
+    this.initFunctionsArn()
+      .then(() => {
+        const functionNames = this.getFunctions();
+        functionNames.forEach((functionName) => {
+          const eventuateConfig = this.getFunctionEventuateConfig(functionName);
+
+          if (eventuateConfig) {
+            const gatewayId = this.getGatewayIdForFunction(functionName);
+            console.log(`Function: ${functionName}`);
+            console.log(`Space: ${eventuateConfig.space}`);
+            console.log(`Gateway ID: ${gatewayId}`);
+            console.log(`Entities and event types:`, eventuateConfig.entitiesAndEventTypes);
+            console.log('\n');
+          }
+        });
+      })
+      .catch(err => {
+        this.logger.error('initFunctionsArn() error:', err);
+      })
+
   }
 
   onEventuateGatewayEnable() {
@@ -148,7 +180,6 @@ class EventuateAWSGatewayPlugin {
   }
 
   onAfterDeploy() {
-
     this.initFunctionsArn()
       .then(functionsArn => {
 
@@ -214,7 +245,7 @@ class EventuateAWSGatewayPlugin {
 
     let credentials = {};
 
-    if (typeof (eventuateConfig.awsCredentials) == 'object') {
+    if (typeof (eventuateConfig.awsCredentials) === 'object') {
       credentials = {
         accessKeyId: eventuateConfig.awsCredentials.accessKeyId,
         secretAccessKey: eventuateConfig.awsCredentials.secretAccessKey,
@@ -241,7 +272,6 @@ class EventuateAWSGatewayPlugin {
         url: eventuateConfig.dlq
       }
     }
-
 
     return options;
   }
@@ -393,12 +423,17 @@ class EventuateAWSGatewayPlugin {
       options.body = requestData
     }
 
-    this.logger.log('options:', util.inspect(options, false, 10));
+    this.logger.log('Request options:', util.inspect(options, false, 10));
     return request(options)
   }
 
   getGatewayIdForFunction(functionName) {
     const functionArn = this.getFunctionArn(functionName);
+
+    if (!functionArn) {
+      this.logger.error(`No ARN for function ${functionName}, perhaps not deployed!`);
+      return false;
+    }
     return new Buffer(functionArn).toString('base64')
   }
 
@@ -437,7 +472,7 @@ class EventuateAWSGatewayPlugin {
 
   getCommandArguments() {
 
-    let space;
+    let space, gatewayId;
 
     if (this.options.hasOwnProperty('space')) {
       space = this.options.space.toString();
@@ -447,8 +482,12 @@ class EventuateAWSGatewayPlugin {
       space = 'default';
     }
 
+    if (this.options.hasOwnProperty('gatewayId')) {
+      gatewayId = this.options.gatewayId.toString();
+    }
+
     return {
-      gatewayId: this.options.gatewayId.toString(),
+      gatewayId: gatewayId,
       space: space
     }
   }
@@ -464,6 +503,7 @@ function convertArrayToObject(arrayOfObjects) {
 }
 
 function gatewayConfigChanged(eventuateConfig, currentConfig) {
+
   const newConfig = {
     subscriberId: eventuateConfig.subscriberId,
     entitiesAndEventTypes: eventuateConfig.entitiesAndEventTypes,
@@ -473,7 +513,52 @@ function gatewayConfigChanged(eventuateConfig, currentConfig) {
     }
   };
 
-  return !(_.isEqual(newConfig, currentConfig));
+  if (eventuateConfig.gatewayDestination.dlq) {
+    newConfig.gatewayDestination.dlq = {
+      url: eventuateConfig.gatewayDestination.dlq.url
+    }
+  }
+
+  if (newConfig.subscriberId !== currentConfig.subscriberId) {
+    return true;
+  }
+
+  const { gatewayDestination: newGatewayDestination } = newConfig;
+  const { gatewayDestination: currentGatewayDestination } = currentConfig;
+
+  if (newGatewayDestination.connectionString !== currentGatewayDestination.connectionString) {
+    return true;
+  }
+
+  if (JSON.stringify(newGatewayDestination.dlq) !== JSON.stringify(currentGatewayDestination.dlq)) {
+    return true;
+  }
+
+  const newConfigEntities = Object.keys(newConfig.entitiesAndEventTypes);
+  const currentConfigEntities = Object.keys(currentConfig.entitiesAndEventTypes);
+
+  if (newConfigEntities.length !== currentConfigEntities.length) {
+    return true;
+  }
+
+  //Compare entities
+  for(let entity of newConfigEntities) {
+
+    if(!(currentConfigEntities.indexOf(entity) >= 0)) {
+      return true;
+    }
+
+    //compare entity events
+    let newConfigEvents = newConfig.entitiesAndEventTypes[entity];
+    let currentConfigEvents = currentConfig.entitiesAndEventTypes[entity];
+
+    const diff1 = _.difference(newConfigEvents, currentConfigEvents);
+    const diff2 = _.difference(currentConfigEvents, newConfigEvents);
+
+    if (diff1.length > 0 || diff2.length > 0) {
+      return true;
+    }
+  }
 }
 
 function ensureAwsCredentials(credentials) {
