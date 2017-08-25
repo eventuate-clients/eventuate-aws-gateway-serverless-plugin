@@ -211,7 +211,6 @@ describe('EventuateAWSGatewayPlugin', () => {
         plugin.onEventuateGatewayDelete()
           .then(result => {
             console.log('result:', result);
-            helpers.expect
             done();
           })
           .catch(done);

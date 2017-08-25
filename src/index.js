@@ -523,8 +523,8 @@ function gatewayConfigChanged(eventuateConfig, currentConfig) {
     return true;
   }
 
-  const { gatewayDestination: newGatewayDestination } = newConfig;
-  const { gatewayDestination: currentGatewayDestination } = currentConfig;
+  const newGatewayDestination = newConfig.gatewayDestination;
+  const currentGatewayDestination = currentConfig.gatewayDestination;
 
   if (newGatewayDestination.connectionString !== currentGatewayDestination.connectionString) {
     return true;
