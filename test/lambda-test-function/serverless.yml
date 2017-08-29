@@ -6,7 +6,7 @@ provider:
   stage: dev
 
 functions:
-  testEventHandler:
+  eventHandlerLambda:
     handler: handler.eventHandler
     events:
       - eventuate:
@@ -16,7 +16,7 @@ functions:
             net.chrisrichardson.eventstore.TestEntity:
               - net.chrisrichardson.eventstore.TestEntityCreated
 
-  testEventHandlerDlq:
+  eventHandlerLambdaDlq:
     handler: handler.eventHandlerDlq
     events:
       - eventuate:
