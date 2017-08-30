@@ -28,3 +28,6 @@ functions:
               - net.chrisrichardson.eventstore.TestEntityCreated
 plugins:
   - eventuate-aws-gateway-serverless-plugin
+
+custom:
+  eventuateGatewayDebug: '*'

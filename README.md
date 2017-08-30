@@ -35,12 +35,12 @@ Add Eventuate AWS Gateway configuration for a lambda function. For example:
 
     EVENTUATE_API_KEY_ID
     EVENTUATE_API_KEY_SECRET
+    
+## serverless.yml custom options
 
-## Optional environment variables
-
-    EVENTUATE_GATEWAY_URL
-    EVENTUATE_GATEWAY_JWT_TOKEN
-    EVENTUATE_GATEWAY_DEBUG
+    eventuateGatewayUrl
+    eventuateGatewayJwtToken
+    eventuateGatewayDebug
 
 ## Commands
 

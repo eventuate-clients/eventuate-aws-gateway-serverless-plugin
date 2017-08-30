@@ -8,11 +8,12 @@ class Logger {
   constructor(options) {
     const title = options.title || '';
     this.logTitle = `[${options.title} DEBUG]`;
-    this.errorTitle = `[${options.title} ERROR]`
+    this.errorTitle = `[${options.title} ERROR]`;
+    this.debug = options.debug;
   }
 
   log() {
-    if (process.env.EVENTUATE_GATEWAY_DEBUG) {
+    if (this.debug) {
       const args = objectToArray(arguments);
       args.unshift(this.logTitle);
       console.log.apply(this, args);

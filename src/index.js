@@ -11,13 +11,19 @@ const Logger = require('./utils').Logger;
 class EventuateAWSGatewayPlugin {
 
   constructor(serverless, options) {
-    this.eventuateGatewayUrl = process.env.EVENTUATE_GATEWAY_URL || 'https://api.eventuate.io/gateway';
+    const customOptions = this.getCustomOptions(serverless);
+
+    this.logger = new Logger({ title: 'EventuateAWSGatewayPlugin', debug: customOptions.eventuateGatewayDebug });
+
+    this.eventuateGatewayUrl = customOptions.eventuateGatewayUrl || 'https://api.eventuate.io/gateway';
+    this.jwtToken = customOptions.eventuateGatewayJwtToken;
+
     this.serverless = serverless;
     this.options = options;
     this.provider = this.serverless.getProvider('aws');
     this.defaultSpace = 'default';
     this.slsCli = this.serverless.cli;
-    this.logger = new Logger({ title: 'EventuateAWSGatewayPlugin'});
+
 
     this.hooks = {
       'after:deploy:deploy': this.onAfterDeploy.bind(this),
@@ -515,16 +521,14 @@ class EventuateAWSGatewayPlugin {
       method,
     };
 
-    const jwtToken = process.env.EVENTUATE_GATEWAY_JWT_TOKEN;
-
-    if (!jwtToken) {
+    if (!this.jwtToken) {
       const auth = `Basic ${new Buffer(`${process.env.EVENTUATE_API_KEY_ID}:${process.env.EVENTUATE_API_KEY_SECRET}`).toString('base64')}`;
       options.headers = {
         'Authorization' : auth
       };
     } else {
       options.headers = {
-        'x-user-info-jwt': jwtToken
+        'x-user-info-jwt': this.jwtToken
       };
     }
 
@@ -606,6 +610,14 @@ class EventuateAWSGatewayPlugin {
       gatewayId: gatewayId,
       space: space,
       functionName: functionName
+    }
+  }
+
+  getCustomOptions(serverless) {
+    return {
+      eventuateGatewayUrl: serverless.service.custom.eventuateGatewayUrl,
+      eventuateGatewayJwtToken: serverless.service.custom.eventuateGatewayJwtToken,
+      eventuateGatewayDebug: serverless.service.custom.eventuateGatewayDebug
     }
   }
 }
