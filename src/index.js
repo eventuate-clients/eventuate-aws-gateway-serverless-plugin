@@ -323,8 +323,8 @@ class EventuateAWSGatewayPlugin {
 
         return Promise.all(promises);
       })
-      .then((result) => {
-        this.serverless.cli.log('Create Eventuate Gateway results:' + JSON.stringify(result));
+      .then(result => {
+        this.slsCli.log('Eventuate Gateway operations succeeded');
       })
       .catch(this.errorHandler.bind(this));
   }
@@ -354,12 +354,12 @@ class EventuateAWSGatewayPlugin {
 
       const space = this.getSpaceFromEventuateConfig(eventuateConfig);
 
-      return this.removeEventuateGateway(gatewayId, space);
+      return this.removeEventuateGateway(gatewayId, space, functionName);
     });
 
     Promise.all(promises)
       .then(result => {
-        this.logger.log('result:', result);
+        this.slsCli.log('Eventuate Gateway operations succeeded');
       })
       .catch(this.errorHandler.bind(this));
   }
@@ -417,31 +417,33 @@ class EventuateAWSGatewayPlugin {
 
     return this.eventuateGatewayRequest(uriPath, 'POST', eventuateConfig)
       .then(body => {
-        this.slsCli.log('Eventuate AWS Gateway created: ' + JSON.stringify(body));
-
-        return { gatewayId: gatewayId };
+        this.slsCli.log('Eventuate AWS Gateway created');
+        this.slsCli.log(`Gateway ID: ${gatewayId}`);
+        this.slsCli.log(`Function Name: ${functionName}`);
+        return { gatewayId: gatewayId, functionName: functionName };
       })
       .catch(err => {
-        if (err.statusCode == 409) {
+        if (err.statusCode === 409) {
 
-          this.slsCli.log(`Eventuate gateway already exists\ngatewayId: ${gatewayId}\nspace: ${space}`);
+          this.slsCli.log(`Eventuate gateway already exists\ngatewayId: ${gatewayId}\nfunctionName: ${functionName}\nspace: ${space}`);
 
           return this.getEventuateGatewayById(gatewayId, space)
             .then((currentEventuateConfig) => {
 
               if (!gatewayConfigChanged(eventuateConfig, currentEventuateConfig)) {
-                this.slsCli.log(`Eventuate gateway not changed\ngatewayId: ${gatewayId}\nspace: ${space}`);
+                this.slsCli.log(`Eventuate gateway not changed\ngatewayId: ${gatewayId}\nfunctionName: ${functionName}\nspace: ${space}`);
 
-                return { gatewayId: gatewayId };
+                return { gatewayId: gatewayId, functionName: functionName };
               }
 
-              this.slsCli.log(`Update eventuate gateway\ngatewayId: ${gatewayId}\nspace: ${space}`);
+              this.slsCli.log(`Update eventuate gateway\ngatewayId: ${gatewayId}\nfunctionName: ${functionName}\nspace: ${space}`);
 
               return this.eventuateGatewayRequest(uriPath, 'PUT', eventuateConfig)
                 .then(body => {
-                  this.slsCli.log('Eventuate AWS Gateway updated: ' + JSON.stringify(body));
-
-                  return { gatewayId: gatewayId };
+                  this.slsCli.log('Eventuate AWS Gateway updated');
+                  this.slsCli.log(`Gateway ID: ${gatewayId}`);
+                  this.slsCli.log(`Function Name: ${functionName}`);
+                  return { gatewayId: gatewayId, functionName: functionName };
                 })
                 .catch(err => {
                   return Promise.reject(err);
@@ -452,15 +454,17 @@ class EventuateAWSGatewayPlugin {
       });
   }
 
-  removeEventuateGateway(gatewayId, space) {
+  removeEventuateGateway(gatewayId, space, functionName) {
 
     const method = 'DELETE';
 
     return this.eventuateGatewayRequest(path.join(space, gatewayId), method, null)
       .then(body => {
 
-        this.slsCli.log('Eventuate AWS Gateway removed:' + JSON.stringify(body));
-        return { gatewayId: gatewayId };
+        this.slsCli.log('Eventuate AWS Gateway removed');
+        this.slsCli.log(`Gateway ID: ${gatewayId}`);
+        this.slsCli.log(`Function Name: ${functionName}`);
+        return { gatewayId: gatewayId, functionName: functionName };
       })
       .catch(err => {
         return Promise.reject(err);
@@ -475,7 +479,7 @@ class EventuateAWSGatewayPlugin {
       .then(body => {
         this.logger.log('Eventuate AWS Gateway:' + body);
 
-        if (typeof(body) == 'string') {
+        if (typeof(body) === 'string') {
           try {
             body = JSON.parse(body);
           } catch (err) {
@@ -486,7 +490,7 @@ class EventuateAWSGatewayPlugin {
         return body;
       })
       .catch(err => {
-        if (err.statusCode == 404) {
+        if (err.statusCode === 404) {
           this.slsCli.log(`Eventuate gateway not exists\ngatewayId: ${gatewayId}\nspace: ${space}`);
           return false;
         }
@@ -512,7 +516,7 @@ class EventuateAWSGatewayPlugin {
 
       const functionEventsObj = convertArrayToObject(functionConfig.events);
 
-      if (functionEventsObj.hasOwnProperty('eventuate') && (typeof functionEventsObj['eventuate'] == 'object')) {
+      if (functionEventsObj.hasOwnProperty('eventuate') && (typeof functionEventsObj['eventuate'] === 'object')) {
 
         return functionEventsObj['eventuate'];
       }
