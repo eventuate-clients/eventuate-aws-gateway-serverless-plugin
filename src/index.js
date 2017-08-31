@@ -11,6 +11,7 @@ const Logger = require('./utils').Logger;
 class EventuateAWSGatewayPlugin {
 
   constructor(serverless, options) {
+
     const customOptions = this.getCustomOptions(serverless);
 
     this.logger = new Logger({ title: 'EventuateAWSGatewayPlugin', debug: customOptions.eventuateGatewayDebug });
@@ -190,6 +191,7 @@ class EventuateAWSGatewayPlugin {
       }
 
       yield this.updateEventuateGatewayState(gatewayId, space, true);
+      this.slsCli.log('Gateway enabled');
     })
       .call(this)
       .catch(this.errorHandler.bind(this));
@@ -223,6 +225,7 @@ class EventuateAWSGatewayPlugin {
       }
 
       yield this.updateEventuateGatewayState(gatewayId, space, false);
+      this.slsCli.log('Gateway disabled');
     })
       .call(this)
       .catch(this.errorHandler.bind(this));
@@ -250,11 +253,8 @@ class EventuateAWSGatewayPlugin {
   updateEventuateGatewayState(gatewayId, space, state) {
 
     const uriPath = path.join(space, gatewayId, 'state');
-    return this.eventuateGatewayRequest(uriPath, 'PUT', {enabled: state })
-      .then(result => {
-        this.slsCli.log(JSON.stringify(result));
-        return result
-      })
+    return this.eventuateGatewayRequest(uriPath, 'PUT', { enabled: state })
+      .then((result) => result)
       .catch(this.errorHandler.bind(this));
   }
 
@@ -292,6 +292,9 @@ class EventuateAWSGatewayPlugin {
     this.slsCli.log(`Subscriber ID: ${gatewayConfig.subscriberId}`);
     this.slsCli.log(`Space: ${space}`);
     this.slsCli.log(`Entities and event types: ${JSON.stringify(gatewayConfig.entitiesAndEventTypes)}`);
+    if (gatewayConfig.stateWithErrorMessages) {
+      this.slsCli.log(`State: ${JSON.stringify(gatewayConfig.stateWithErrorMessages)}`);
+    }
     console.log('\n');
   }
 
