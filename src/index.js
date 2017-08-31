@@ -255,7 +255,6 @@ class EventuateAWSGatewayPlugin {
     const uriPath = path.join(space, gatewayId, 'state');
     return this.eventuateGatewayRequest(uriPath, 'PUT', { enabled: state })
       .then((result) => result)
-      .catch(this.errorHandler.bind(this));
   }
 
   errorHandler(error) {
@@ -268,6 +267,11 @@ class EventuateAWSGatewayPlugin {
         break;
       case 404:
         this.logger.error('Eventuate Gateway not found');
+        break;
+      case 500:
+        this.logger.error('Server-side error');
+        this.logger.error(error.response.headers);
+        this.logger.error(error.stack);
         break;
       default:
         this.logger.error(error.stack);
