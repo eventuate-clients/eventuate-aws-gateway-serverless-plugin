@@ -1,6 +1,8 @@
 'use strict';
 const expect = require('chai').expect;
 const Serverless = require('serverless');
+const readYaml = require('read-yaml');
+const path = require('path');
 const helpers = require('./lib/helpers');
 const EventuateAWSGatewayPlugin = require('../src/index');
 const capitalizeFirstLetter = require('../src/utils').capitalizeFirstLetter;
@@ -42,6 +44,20 @@ const eventuateConfig = {
   }
 };
 
+let serverlessEventuateConfig;
+const serverlessConfigFile = './lambda-test-function/serverless.yml';
+before((done) => {
+  readYaml(path.join(__dirname, serverlessConfigFile), (err, data) => {
+    if (err) {
+      return done(err);
+    }
+
+    serverlessEventuateConfig = data.functions['eventHandlerLambda'].events.pop()['eventuate'];
+    console.log(serverlessEventuateConfig);
+    done();
+  });
+});
+
 describe('EventuateAWSGatewayPlugin', () => {
 
   it('registers the appropriate hook', () => {
@@ -58,7 +74,7 @@ describe('EventuateAWSGatewayPlugin', () => {
 
     let gatewayId;
 
-    it('should create a gateway', (done) => {
+    xit('should create a gateway', (done) => {
 
       plugin.createEventuateGateway(functionName, eventuateConfig)
         .then(result => {
@@ -71,7 +87,7 @@ describe('EventuateAWSGatewayPlugin', () => {
         .catch(done)
     });
 
-    it('should load gateway by ID', (done) => {
+    xit('should load gateway by ID', (done) => {
 
       expect(gatewayId).to.be.ok;
 
@@ -84,7 +100,7 @@ describe('EventuateAWSGatewayPlugin', () => {
         .catch(done)
     });
 
-    it('should remove gateway by ID', (done) => {
+    xit('should remove gateway by ID', (done) => {
 
       expect(gatewayId).to.be.ok;
 
@@ -98,7 +114,7 @@ describe('EventuateAWSGatewayPlugin', () => {
         .catch(done);
     });
 
-    it('should try to get removed gateway by ID and receive 404', (done) => {
+    xit('should try to get removed gateway by ID and receive 404', (done) => {
 
       expect(gatewayId).to.be.ok;
 
@@ -124,7 +140,7 @@ describe('EventuateAWSGatewayPlugin', () => {
           .catch(done);
       });
 
-      it('should load gateway by ID', (done) => {
+      xit('should load gateway by ID', (done) => {
 
         expect(gatewayId).to.be.ok;
 
@@ -137,7 +153,7 @@ describe('EventuateAWSGatewayPlugin', () => {
           .catch(done)
       });
 
-      it('should remove', (done) => {
+      xit('should remove', (done) => {
         helpers.serverlessRemove()
           .then(() => {
             done();
@@ -145,7 +161,7 @@ describe('EventuateAWSGatewayPlugin', () => {
           .catch(done);
       });
 
-      it('should try to get removed gateway by ID and receive 404', (done) => {
+      xit('should try to get removed gateway by ID and receive 404', (done) => {
 
         expect(gatewayId).to.be.ok;
 
@@ -167,9 +183,13 @@ describe('EventuateAWSGatewayPlugin', () => {
             console.log('result:', result);
             expect(result).to.be.an('Object');
 
-            plugin.options = {
+            /*plugin.options = {
               gatewayId: result.gatewayId,
               space: eventuateConfig.space
+            };*/
+            plugin.options = {
+              gatewayId: result.gatewayId,
+              space: serverlessEventuateConfig.space
             };
             done();
           })

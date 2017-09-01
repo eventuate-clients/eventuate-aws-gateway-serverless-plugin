@@ -32,11 +32,13 @@ module.exports.serverlessRemove = () => {
 };
 
 module.exports.parseGatewayIdFromOutput = (output) => {
-  const regex = /{"gatewayId":".*"}/gi;
+  console.log('output:', output);
+  // const regex = /{"gatewayId":".*"}/gi;
+  const regex = /Serverless: Gateway ID:\s.*/gi;
   let matches = output.match(regex);
+  console.log('matches:', matches);
   if (matches) {
-    const obj = JSON.parse(matches[0]);
-    return obj.gatewayId;
+    return matches[0].split(/Serverless: Gateway ID:\s/).pop();
   }
 };
 
