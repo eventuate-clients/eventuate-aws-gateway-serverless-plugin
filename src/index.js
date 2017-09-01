@@ -372,9 +372,11 @@ class EventuateAWSGatewayPlugin {
       credentials = {
         accessKeyId: eventuateConfig.awsCredentials.accessKeyId,
         secretAccessKey: eventuateConfig.awsCredentials.secretAccessKey,
-      }
+      };
+      this.logger.log('Using specified AWS credentials');
     } else {
       credentials = this.provider.getCredentials().credentials;
+      this.logger.log('Using provider AWS credentials');
     }
 
     if (!ensureAwsCredentials(credentials)) {
@@ -429,7 +431,6 @@ class EventuateAWSGatewayPlugin {
 
           return this.getEventuateGatewayById(gatewayId, space)
             .then((currentEventuateConfig) => {
-
               if (!gatewayConfigChanged(eventuateConfig, currentEventuateConfig)) {
                 this.slsCli.log(`Eventuate gateway not changed\ngatewayId: ${gatewayId}\nfunctionName: ${functionName}\nspace: ${space}`);
 

@@ -29,6 +29,9 @@ functions:
           subscriberId: eventuateGatewayPluginDlq
           dlq: ${env:EVENTUATE_PLUGIN_TEST_DLQ_URL}
           space: plugin
+          awsCredentials:
+            accessKeyId: ${env:AWS_ACCESS_KEY_ID}
+            secretAccessKey: ${env:AWS_SECRET_ACCESS_KEY}
           entitiesAndEventTypes:
             net.chrisrichardson.eventstore.TestEntity:
               - net.chrisrichardson.eventstore.TestEntityCreated
