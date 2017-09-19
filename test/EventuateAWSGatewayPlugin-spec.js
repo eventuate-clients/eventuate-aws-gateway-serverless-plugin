@@ -70,24 +70,21 @@ describe('EventuateAWSGatewayPlugin', () => {
     expect(plugin.hooks['eventuate-gateway:delete:delete']).to.be.a('function');
   });
 
-  describe('Using plugin methods', () => {
+  describe('Using Serverless', () => {
+    // let gatewayId;
+    let gatewayId = 'YXJuOmF3czpsYW1iZGE6dXMtZWFzdC0xOjkwMTE3MzQ5MzcwMTpmdW5jdGlvbjpsYW1iZGEtdGVzdC1mdW5jdGlvbi1kZXYtZXZlbnRIYW5kbGVyTGFtYmRh';
 
-    let gatewayId;
-
-    xit('should create a gateway', (done) => {
-
-      plugin.createEventuateGateway(functionName, eventuateConfig)
-        .then(result => {
-          console.log('result:', result);
-          helpers.expectCommonResult(result);
-
-          gatewayId = result.gatewayId;
+    it('should deploy service and create a gateway', (done) => {
+      helpers.serverlessDeployCmd()
+        .then(output => {
+          gatewayId = helpers.parseGatewayIdFromOutput(output);
+          expect(gatewayId).to.be.ok;
           done();
         })
-        .catch(done)
+        .catch(done);
     });
 
-    xit('should load gateway by ID', (done) => {
+    it('should load gateway by ID', (done) => {
 
       expect(gatewayId).to.be.ok;
 
@@ -100,21 +97,60 @@ describe('EventuateAWSGatewayPlugin', () => {
         .catch(done)
     });
 
-    xit('should remove gateway by ID', (done) => {
+    it('should fetch gateway configuration by ID', done => {
 
-      expect(gatewayId).to.be.ok;
-
-      plugin.removeEventuateGateway(gatewayId, eventuateConfig.space)
+      helpers.eventuateGatewayInfoCmd(gatewayId)
         .then(result => {
+          // helpers.expectGetGatewayResult(result);
           console.log('result:', result);
-          helpers.expectCommonResult(result);
-          expect(result.gatewayId).to.equal(gatewayId);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
           done();
         })
         .catch(done);
     });
 
-    xit('should try to get removed gateway by ID and receive 404', (done) => {
+    it('should disable gateway', done => {
+      helpers.eventuateGatewayDisableCmd(gatewayId)
+        .then(result => {
+          console.log('result:', result);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should enable gateway', done => {
+      helpers.eventuateGatewayEnableCmd(gatewayId)
+        .then(result => {
+          console.log('result:', result);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should delete gateway', done => {
+
+      plugin.onEventuateGatewayDelete()
+        .then(result => {
+          console.log('result:', result);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should remove', (done) => {
+      helpers.serverlessRemoveCmd()
+        .then(() => {
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should try to get removed gateway by ID and receive 404', (done) => {
 
       expect(gatewayId).to.be.ok;
 
@@ -125,116 +161,6 @@ describe('EventuateAWSGatewayPlugin', () => {
           done();
         })
         .catch(done);
-    });
-
-    describe('Using Serverless', () => {
-      let gatewayId;
-
-      it('should deploy', (done) => {
-        helpers.serverlessDeploy()
-          .then(output => {
-            gatewayId = helpers.parseGatewayIdFromOutput(output);
-            expect(gatewayId).to.be.ok;
-            done();
-          })
-          .catch(done);
-      });
-
-      xit('should load gateway by ID', (done) => {
-
-        expect(gatewayId).to.be.ok;
-
-        plugin.getEventuateGatewayById(gatewayId, eventuateConfig.space)
-          .then(result => {
-            console.log('result:', result);
-            helpers.expectGetGatewayResult(result);
-            done();
-          })
-          .catch(done)
-      });
-
-      xit('should remove', (done) => {
-        helpers.serverlessRemove()
-          .then(() => {
-            done();
-          })
-          .catch(done);
-      });
-
-      xit('should try to get removed gateway by ID and receive 404', (done) => {
-
-        expect(gatewayId).to.be.ok;
-
-        plugin.getEventuateGatewayById(gatewayId, eventuateConfig.space)
-          .then(result => {
-            console.log('result:', result);
-            expect(result).to.equal(false);
-            done();
-          })
-          .catch(done);
-      });
-    });
-
-    describe('Plugin commands', function () {
-
-      before(done => {
-        plugin.createEventuateGateway(functionName, eventuateConfig)
-          .then(result => {
-            console.log('result:', result);
-            expect(result).to.be.an('Object');
-
-            /*plugin.options = {
-              gatewayId: result.gatewayId,
-              space: eventuateConfig.space
-            };*/
-            plugin.options = {
-              gatewayId: result.gatewayId,
-              space: serverlessEventuateConfig.space
-            };
-            done();
-          })
-          .catch(done)
-      });
-
-      it('should fetch gateway configuration', done => {
-
-        plugin.onEventuateGatewayInfo()
-          .then(result => {
-            helpers.expectGetGatewayResult(result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should disable gateway', done => {
-
-        plugin.onEventuateGatewayDisable()
-          .then(result => {
-            console.log('result:', result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should enable gateway', done => {
-
-        plugin.onEventuateGatewayEnable()
-          .then(result => {
-            console.log('result:', result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should delete gateway', done => {
-
-        plugin.onEventuateGatewayDelete()
-          .then(result => {
-            console.log('result:', result);
-            done();
-          })
-          .catch(done);
-      });
     });
   });
 });
