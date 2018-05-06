@@ -5,8 +5,14 @@ provider:
   runtime: nodejs4.3
   stage: dev
 
+plugins:
+  - eventuate-aws-gateway-serverless-plugin
+
+custom:
+  eventuateGatewayDebug: '*'
+
 functions:
-  testEventHandler:
+  eventHandlerLambda:
     handler: handler.eventHandler
     events:
       - eventuate:
@@ -15,5 +21,17 @@ functions:
           entitiesAndEventTypes:
             net.chrisrichardson.eventstore.TestEntity:
               - net.chrisrichardson.eventstore.TestEntityCreated
-plugins:
-  - eventuate-aws-gateway-serverless-plugin
+
+  eventHandlerLambdaDlq:
+    handler: handler.eventHandlerDlq
+    events:
+      - eventuate:
+          subscriberId: eventuateGatewayPluginDlq
+          dlq: ${env:EVENTUATE_PLUGIN_TEST_DLQ_URL}
+          space: plugin
+          awsCredentials:
+            accessKeyId: ${env:AWS_ACCESS_KEY_ID}
+            secretAccessKey: ${env:AWS_SECRET_ACCESS_KEY}
+          entitiesAndEventTypes:
+            net.chrisrichardson.eventstore.TestEntity:
+              - net.chrisrichardson.eventstore.TestEntityCreated

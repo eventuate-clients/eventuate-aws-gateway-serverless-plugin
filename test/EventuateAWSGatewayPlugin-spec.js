@@ -1,6 +1,8 @@
 'use strict';
 const expect = require('chai').expect;
 const Serverless = require('serverless');
+const readYaml = require('read-yaml');
+const path = require('path');
 const helpers = require('./lib/helpers');
 const EventuateAWSGatewayPlugin = require('../src/index');
 const capitalizeFirstLetter = require('../src/utils').capitalizeFirstLetter;
@@ -42,6 +44,20 @@ const eventuateConfig = {
   }
 };
 
+let serverlessEventuateConfig;
+const serverlessConfigFile = './lambda-test-function/serverless.yml';
+before((done) => {
+  readYaml(path.join(__dirname, serverlessConfigFile), (err, data) => {
+    if (err) {
+      return done(err);
+    }
+
+    serverlessEventuateConfig = data.functions['eventHandlerLambda'].events.pop()['eventuate'];
+    console.log(serverlessEventuateConfig);
+    done();
+  });
+});
+
 describe('EventuateAWSGatewayPlugin', () => {
 
   it('registers the appropriate hook', () => {
@@ -54,21 +70,18 @@ describe('EventuateAWSGatewayPlugin', () => {
     expect(plugin.hooks['eventuate-gateway:delete:delete']).to.be.a('function');
   });
 
-  describe('Using plugin methods', () => {
+  describe('Using Serverless', () => {
+    // let gatewayId;
+    let gatewayId = 'YXJuOmF3czpsYW1iZGE6dXMtZWFzdC0xOjkwMTE3MzQ5MzcwMTpmdW5jdGlvbjpsYW1iZGEtdGVzdC1mdW5jdGlvbi1kZXYtZXZlbnRIYW5kbGVyTGFtYmRh';
 
-    let gatewayId;
-
-    it('should create a gateway', (done) => {
-
-      plugin.createEventuateGateway(functionName, eventuateConfig)
-        .then(result => {
-          console.log('result:', result);
-          helpers.expectCommonResult(result);
-
-          gatewayId = result.gatewayId;
+    it('should deploy service and create a gateway', (done) => {
+      helpers.serverlessDeployCmd()
+        .then(output => {
+          gatewayId = helpers.parseGatewayIdFromOutput(output);
+          expect(gatewayId).to.be.ok;
           done();
         })
-        .catch(done)
+        .catch(done);
     });
 
     it('should load gateway by ID', (done) => {
@@ -84,15 +97,54 @@ describe('EventuateAWSGatewayPlugin', () => {
         .catch(done)
     });
 
-    it('should remove gateway by ID', (done) => {
+    it('should fetch gateway configuration by ID', done => {
 
-      expect(gatewayId).to.be.ok;
+      helpers.eventuateGatewayInfoCmd(gatewayId)
+        .then(result => {
+          // helpers.expectGetGatewayResult(result);
+          console.log('result:', result);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
+          done();
+        })
+        .catch(done);
+    });
 
-      plugin.removeEventuateGateway(gatewayId, eventuateConfig.space)
+    it('should disable gateway', done => {
+      helpers.eventuateGatewayDisableCmd(gatewayId)
         .then(result => {
           console.log('result:', result);
-          helpers.expectCommonResult(result);
-          expect(result.gatewayId).to.equal(gatewayId);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should enable gateway', done => {
+      helpers.eventuateGatewayEnableCmd(gatewayId)
+        .then(result => {
+          console.log('result:', result);
+          const parsedGatewayId = helpers.parseGatewayIdFromOutput(result);
+          expect(parsedGatewayId).to.equal(gatewayId);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should delete gateway', done => {
+
+      plugin.onEventuateGatewayDelete()
+        .then(result => {
+          console.log('result:', result);
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should remove', (done) => {
+      helpers.serverlessRemoveCmd()
+        .then(() => {
           done();
         })
         .catch(done);
@@ -109,113 +161,6 @@ describe('EventuateAWSGatewayPlugin', () => {
           done();
         })
         .catch(done);
-    });
-
-    describe('Using Serverless', () => {
-      let gatewayId;
-
-      it('should deploy', (done) => {
-        helpers.serverlessDeploy()
-          .then(output => {
-            gatewayId = helpers.parseGatewayIdFromOutput(output);
-            expect(gatewayId).to.be.ok;
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should load gateway by ID', (done) => {
-
-        expect(gatewayId).to.be.ok;
-
-        plugin.getEventuateGatewayById(gatewayId, eventuateConfig.space)
-          .then(result => {
-            console.log('result:', result);
-            helpers.expectGetGatewayResult(result);
-            done();
-          })
-          .catch(done)
-      });
-
-      it('should remove', (done) => {
-        helpers.serverlessRemove()
-          .then(() => {
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should try to get removed gateway by ID and receive 404', (done) => {
-
-        expect(gatewayId).to.be.ok;
-
-        plugin.getEventuateGatewayById(gatewayId, eventuateConfig.space)
-          .then(result => {
-            console.log('result:', result);
-            expect(result).to.equal(false);
-            done();
-          })
-          .catch(done);
-      });
-    });
-
-    describe('Plugin commands', function () {
-
-      before(done => {
-        plugin.createEventuateGateway(functionName, eventuateConfig)
-          .then(result => {
-            console.log('result:', result);
-            expect(result).to.be.an('Object');
-
-            plugin.options = {
-              gatewayId: result.gatewayId,
-              space: eventuateConfig.space
-            };
-            done();
-          })
-          .catch(done)
-      });
-
-      it('should fetch gateway configuration', done => {
-
-        plugin.onEventuateGatewayInfo()
-          .then(result => {
-            helpers.expectGetGatewayResult(result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should disable gateway', done => {
-
-        plugin.onEventuateGatewayDisable()
-          .then(result => {
-            console.log('result:', result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should enable gateway', done => {
-
-        plugin.onEventuateGatewayEnable()
-          .then(result => {
-            console.log('result:', result);
-            done();
-          })
-          .catch(done);
-      });
-
-      it('should delete gateway', done => {
-
-        plugin.onEventuateGatewayDelete()
-          .then(result => {
-            console.log('result:', result);
-            helpers.expect
-            done();
-          })
-          .catch(done);
-      });
     });
   });
 });

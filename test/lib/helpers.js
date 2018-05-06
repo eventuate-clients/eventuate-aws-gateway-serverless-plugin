@@ -21,22 +21,34 @@ module.exports.expectCommonResult = (result) => {
   expect(result).to.haveOwnProperty('gatewayId');
 };
 
-module.exports.serverlessDeploy = () => {
-
+module.exports.serverlessDeployCmd = () => {
   return runCommand(slsCommand, [ 'deploy' ], slsLambdaPath)
 };
 
-module.exports.serverlessRemove = () => {
+module.exports.eventuateGatewayInfoCmd = (gatewayId) => {
+  return runCommand(slsCommand, [ 'eventuate-gateway', 'info', '--gatewayId', gatewayId ], slsLambdaPath)
+};
 
+module.exports.eventuateGatewayDisableCmd = (gatewayId) => {
+  return runCommand(slsCommand, [ 'eventuate-gateway', 'disable', '--gatewayId', gatewayId ], slsLambdaPath)
+};
+
+module.exports.eventuateGatewayEnableCmd = (gatewayId) => {
+  return runCommand(slsCommand, [ 'eventuate-gateway', 'enable', '--gatewayId', gatewayId ], slsLambdaPath)
+};
+
+module.exports.serverlessRemoveCmd = () => {
   return runCommand(slsCommand, [ 'remove' ], slsLambdaPath)
 };
 
 module.exports.parseGatewayIdFromOutput = (output) => {
-  const regex = /{"gatewayId":".*"}/gi;
+  console.log('output:', output);
+  // const regex = /{"gatewayId":".*"}/gi;
+  const regex = /Serverless: Gateway ID:\s.*/gi;
   let matches = output.match(regex);
+  console.log('matches:', matches);
   if (matches) {
-    const obj = JSON.parse(matches[0]);
-    return obj.gatewayId;
+    return matches[0].split(/Serverless: Gateway ID:\s/).pop();
   }
 };
 
